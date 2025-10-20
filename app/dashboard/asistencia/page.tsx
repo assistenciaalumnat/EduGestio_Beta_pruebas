@@ -72,7 +72,7 @@ export default function AsistenciaPage() {
           </div>
           <Card>
             <CardHeader>
-              <CardTitle>{t("attendance.studentsList")}</CardTitle>
+              <CardTitle>{hola}</CardTitle>
               <CardDescription>{t("attendance.selectGroupSubject")}</CardDescription>
             </CardHeader>
             <CardContent>
