@@ -62,7 +62,7 @@ export default function AsistenciaPage() {
           <TabsTrigger value="historial">{t("attendance.history")}</TabsTrigger>
         </TabsList>
         <TabsContent value="lista" className="space-y-4 mt-4">
-          <div>
+          <div className="flex justify-between items-center">
             <div className="flex space-x-2">
               <Button variant="outline">{t("attendance.today")}</Button>
               <Button variant="outline">{t("attendance.thisWeek")}</Button>
@@ -73,7 +73,27 @@ export default function AsistenciaPage() {
           <Card>
             <CardHeader>
               <CardTitle>{"Selecciona un grup i assignatura"}</CardTitle>
+              <div className="flex space-x-2">
+                <select className="border border-gray-300 p-2 rounded">
+                  <option disabled selected>Assignatures</option>
+                  <option value="catala">Llengua Catalana</option>
+                  <option value="castella">Llengua Castellana</option>
+                  <option value="matematiques">Matemàtiques</option>
+                  <option value="historia">Història</option>
+                  <option value="musica">Música</option>
+                  <option value="biologia">Biologia</option>
+                </select>
 
+                <select className="border border-gray-300 p-2 rounded">
+                  <option disabled selected>Grups</option>
+                  <option value="1a">1 A</option>
+                  <option value="1b">1 B</option>
+                  <option value="4a">4 A</option>
+                  <option value="4b">4 B</option>
+                  <option value="1bta">BT1 A</option>
+                  <option value="1btb">BT1 B</option>
+                </select>
+              <div>
             </CardHeader>
             <CardContent>
               <p className="text-center text-muted-foreground py-8">{t("attendance.selectGroupToViewList")}</p>
