@@ -73,7 +73,6 @@ export default function AsistenciaPage() {
           <Card>
             <CardHeader>
               <CardTitle>{"Selecciona un grup i assignatura"}</CardTitle>
-              <CardDescription>{t("attendance.selectGroupSubject")}</CardDescription>
             </CardHeader>
             <CardContent>
               <p className="text-center text-muted-foreground py-8">{t("attendance.selectGroupToViewList")}</p>
