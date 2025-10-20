@@ -72,7 +72,7 @@ export default function AsistenciaPage() {
           </div>
           <Card>
             <CardHeader>
-              <CardTitle>{"Selecciona un grupo y una asignatura"}</CardTitle>
+              <CardTitle>{"Selecciona un grup i assignatura"}</CardTitle>
               <CardDescription>{t("attendance.selectGroupSubject")}</CardDescription>
             </CardHeader>
             <CardContent>
