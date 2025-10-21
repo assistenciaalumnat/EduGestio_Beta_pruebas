@@ -84,8 +84,7 @@ export default function AsistenciaPage() {
                   <option value="biologia">Biologia</option>
                 </select>
 
-                <select className="border border-gray-300 p-2 rounded" defaultValue="">
-                  <option disabled value="">Grups</option>
+                <select className="border border-gray-300 p-2 rounded" defaultValue="Grups">
                   <option value="1a">1 A</option>
                   <option value="1b">1 B</option>
                   <option value="4a">4 A</option>
