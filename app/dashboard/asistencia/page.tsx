@@ -84,7 +84,7 @@ export default function AsistenciaPage() {
                   <option value="1btb">BT1 B</option>
                 </select>
 
-                <select className="border border-gray-300 p-2 rounded" defaultValue="">
+                <select defaultValue="">
                   <option disabled value="">Assignatures</option>
                   <option value="catala">Llengua Catalana</option>
                   <option value="castella">Llengua Castellana</option>
