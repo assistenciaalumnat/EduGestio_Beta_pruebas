@@ -77,9 +77,10 @@ export default function AsistenciaPage() {
           </div>
 
           {(() => {
-            const selectedGroup = studentsData.groups.find((g) => g.id === "1a")
+            const groupData = studentsData.groups.find((g) => g.id === selectedGroup)
             return (
               <AttendancePanel
+                defaultGroupId={selectedGroup}
                 groups={studentsData.groups.map(({ id, name }) => ({ id, name }))}
                 subjects={[
                   { id: "cat", name: "Llengua Catalana" },
@@ -90,11 +91,12 @@ export default function AsistenciaPage() {
                   { id: "bio", name: "Biologia" },
                 ]}
                 students={
-                  selectedGroup?.students.map((s) => ({
+                  groupData?.students.map((s) => ({
                     id: s.id,
                     name: `${s.name} ${s.surname}`,
                   })) ?? []
                 }
+                onGroupChange={(groupId) => setSelectedGroup(groupId)}
                 onSave={async (payload) => {
                   console.log("Assistència registrada:", payload)
                 }}
