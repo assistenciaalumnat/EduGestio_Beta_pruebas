@@ -57,36 +57,40 @@ export default function AsistenciaPage() {
         </Card>
       </div>
 
-      <Tabs defaultValue="lista" className="mt-6">
-        <TabsList>
-          <TabsTrigger value="lista">{t("attendance.completeList")}</TabsTrigger>
-          <TabsTrigger value="grupos">{t("attendance.splitGroups")}</TabsTrigger>
-          <TabsTrigger value="historial">{t("attendance.history")}</TabsTrigger>
-        </TabsList>
-        <TabsContent value="lista" className="space-y-4 mt-4">
-          <div className="flex justify-between items-center">
-            <div className="flex space-x-2">
-              <Button variant="outline">{t("attendance.today")}</Button>
-              <Button variant="outline">{t("attendance.thisWeek")}</Button>
-              <Button variant="outline">{t("attendance.thisMonth")}</Button>
-            </div>
-            <Button>{t("attendance.registerAttendance")}</Button>
+      <TabsContent value="lista" className="space-y-4 mt-4">
+        <div className="flex justify-between items-center">
+          <div className="flex space-x-2">
+            <Button variant="outline">{t("attendance.today")}</Button>
+            <Button variant="outline">{t("attendance.thisWeek")}</Button>
+            <Button variant="outline">{t("attendance.thisMonth")}</Button>
           </div>
-          <AttendancePanel
-            groups={[
-              { id: "1A", name: "1A" },
-              { id: "1B", name: "1B" },
-            ]}
-            subjects={[
-              { id: "cat", name: "Llengua Catalana" },
-              { id: "mat", name: "Matemàtiques" },
-            ]}
-            students={students}
-            onSave={async (payload) => {
-              console.log("Assistència registrada:", payload);
-            }}
-          />
-        </TabsContent>
+          <Button>{t("attendance.registerAttendance")}</Button>
+        </div>
+
+        {/* Aquí el componente actualizado */}
+        {(() => {
+          const selectedGroup = data.groups.find((g) => g.id === "1a");
+          return (
+            <AttendancePanel
+              groups={data.groups.map(({ id, name }) => ({ id, name }))}
+              subjects={[
+                { id: "cat", name: "Llengua Catalana" },
+                { id: "mat", name: "Matemàtiques" },
+              ]}
+              students={
+                selectedGroup?.students.map((s) => ({
+                  id: s.id,
+                  name: `${s.name} ${s.surname}`,
+                })) ?? []
+              }
+              onSave={async (payload) => {
+                console.log("Assistència registrada:", payload);
+              }}
+            />
+          );
+        })()}
+      </TabsContent>
+
         <TabsContent value="grupos" className="mt-4">
           <Card>
             <CardHeader>
