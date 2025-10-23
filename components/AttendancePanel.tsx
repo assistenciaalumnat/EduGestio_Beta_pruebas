@@ -65,6 +65,7 @@ interface AttendancePanelProps {
   students: Student[];
   defaultGroupId?: string;
   defaultSubjectId?: string;
+  onGroupChange?: (groupId: string) => void;
   onSave?: (payload: {
     date: string;
     groupId: string;
