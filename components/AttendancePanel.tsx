@@ -106,6 +106,12 @@ export default function AttendancePanel({
     return base;
   });
 
+  useEffect(() => {
+    if (defaultGroupId && defaultGroupId !== selectedGroup) {
+      setSelectedGroup(defaultGroupId);
+    }
+  }, [defaultGroupId]);
+
   const filtered = useMemo(
     () =>
       students.filter((s) =>
