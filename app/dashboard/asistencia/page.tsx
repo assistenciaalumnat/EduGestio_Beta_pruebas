@@ -6,8 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Calendar, Clock, Users } from "lucide-react"
 import { useI18n } from "@/lib/i18n-context"
-import AttendancePanel from "@/components/AttendancePanel";
-import students from "./students.json";
+import AttendancePanel from "@/components/AttendancePanel"
+import studentsData from "./students.json"
 
 export default function AsistenciaPage() {
   const { t } = useI18n()
@@ -57,39 +57,49 @@ export default function AsistenciaPage() {
         </Card>
       </div>
 
-      <TabsContent value="lista" className="space-y-4 mt-4">
-        <div className="flex justify-between items-center">
-          <div className="flex space-x-2">
-            <Button variant="outline">{t("attendance.today")}</Button>
-            <Button variant="outline">{t("attendance.thisWeek")}</Button>
-            <Button variant="outline">{t("attendance.thisMonth")}</Button>
-          </div>
-          <Button>{t("attendance.registerAttendance")}</Button>
-        </div>
+      <Tabs defaultValue="lista" className="mt-6">
+        <TabsList>
+          <TabsTrigger value="lista">{t("attendance.completeList")}</TabsTrigger>
+          <TabsTrigger value="grupos">{t("attendance.splitGroups")}</TabsTrigger>
+          <TabsTrigger value="historial">{t("attendance.history")}</TabsTrigger>
+        </TabsList>
 
-        {/* Aquí el componente actualizado */}
-        {(() => {
-          const selectedGroup = data.groups.find((g) => g.id === "1a");
-          return (
-            <AttendancePanel
-              groups={data.groups.map(({ id, name }) => ({ id, name }))}
-              subjects={[
-                { id: "cat", name: "Llengua Catalana" },
-                { id: "mat", name: "Matemàtiques" },
-              ]}
-              students={
-                selectedGroup?.students.map((s) => ({
-                  id: s.id,
-                  name: `${s.name} ${s.surname}`,
-                })) ?? []
-              }
-              onSave={async (payload) => {
-                console.log("Assistència registrada:", payload);
-              }}
-            />
-          );
-        })()}
-      </TabsContent>
+        <TabsContent value="lista" className="space-y-4 mt-4">
+          <div className="flex justify-between items-center">
+            <div className="flex space-x-2">
+              <Button variant="outline">{t("attendance.today")}</Button>
+              <Button variant="outline">{t("attendance.thisWeek")}</Button>
+              <Button variant="outline">{t("attendance.thisMonth")}</Button>
+            </div>
+            <Button>{t("attendance.registerAttendance")}</Button>
+          </div>
+
+          {(() => {
+            const selectedGroup = studentsData.groups.find((g) => g.id === "1a")
+            return (
+              <AttendancePanel
+                groups={studentsData.groups.map(({ id, name }) => ({ id, name }))}
+                subjects={[
+                  { id: "cat", name: "Llengua Catalana" },
+                  { id: "cas", name: "Llengua Castellana" },
+                  { id: "mat", name: "Matemàtiques" },
+                  { id: "his", name: "História" },
+                  { id: "mus", name: "Música" },
+                  { id: "bio", name: "Biologia" },
+                ]}
+                students={
+                  selectedGroup?.students.map((s) => ({
+                    id: s.id,
+                    name: `${s.name} ${s.surname}`,
+                  })) ?? []
+                }
+                onSave={async (payload) => {
+                  console.log("Assistència registrada:", payload)
+                }}
+              />
+            )
+          })()}
+        </TabsContent>
 
         <TabsContent value="grupos" className="mt-4">
           <Card>
@@ -102,6 +112,7 @@ export default function AsistenciaPage() {
             </CardContent>
           </Card>
         </TabsContent>
+
         <TabsContent value="historial" className="mt-4">
           <Card>
             <CardHeader>
