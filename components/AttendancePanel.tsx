@@ -112,6 +112,12 @@ export default function AttendancePanel({
     }
   }, [defaultGroupId]);
 
+  useEffect(() => {
+    const newAttendance: AttendanceRecord = {};
+    for (const s of students) newAttendance[s.id] = null;
+    setAttendance(newAttendance);
+  }, [students]);
+
   const filtered = useMemo(
     () =>
       students.filter((s) =>
