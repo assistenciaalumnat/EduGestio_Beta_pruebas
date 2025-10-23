@@ -88,6 +88,7 @@ export default function AttendancePanel({
   students,
   defaultGroupId,
   defaultSubjectId,
+  onGroupChange,
   onSave,
 }: AttendancePanelProps) {
   const [selectedGroup, setSelectedGroup] = useState<string>(
