@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { PageLayout } from "@/components/page-layout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -11,6 +12,7 @@ import studentsData from "./students.json"
 
 export default function AsistenciaPage() {
   const { t } = useI18n()
+  const [selectedGroup, setSelectedGroup] = useState("1a")
 
   return (
     <PageLayout title={t("attendance.title")} description={t("attendance.description")}>
