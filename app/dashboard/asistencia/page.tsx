@@ -6,6 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Calendar, Clock, Users } from "lucide-react"
 import { useI18n } from "@/lib/i18n-context"
+import AttendancePanel from "@/components/AttendancePanel";
+import students from "./students.json";
 
 export default function AsistenciaPage() {
   const { t } = useI18n()
@@ -70,35 +72,20 @@ export default function AsistenciaPage() {
             </div>
             <Button>{t("attendance.registerAttendance")}</Button>
           </div>
-          <Card>
-            <CardHeader>
-              <CardTitle>{"Selecciona un grup i assignatura"}</CardTitle>
-              <div className="flex space-x-2">
-                <select className="border border-gray-300 p-2 rounded" defaultValue="">
-                  <option disabled value="">Grups</option>
-                  <option value="1a">1 A</option>
-                  <option value="1b">1 B</option>
-                  <option value="4a">4 A</option>
-                  <option value="4b">4 B</option>
-                  <option value="1bta">BT1 A</option>
-                  <option value="1btb">BT1 B</option>
-                </select>
-
-                <select defaultValue="">
-                  <option disabled value="">Assignatures</option>
-                  <option value="catala">Llengua Catalana</option>
-                  <option value="castella">Llengua Castellana</option>
-                  <option value="matematiques">Matemàtiques</option>
-                  <option value="historia">Història</option>
-                  <option value="musica">Música</option>
-                  <option value="biologia">Biologia</option>
-                </select>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <p className="text-center text-muted-foreground py-8">{t("attendance.selectGroupToViewList")}</p>
-            </CardContent>
-          </Card>
+          <AttendancePanel
+            groups={[
+              { id: "1A", name: "1A" },
+              { id: "1B", name: "1B" },
+            ]}
+            subjects={[
+              { id: "cat", name: "Llengua Catalana" },
+              { id: "mat", name: "Matemàtiques" },
+            ]}
+            students={students}
+            onSave={async (payload) => {
+              console.log("Assistència registrada:", payload);
+            }}
+          />
         </TabsContent>
         <TabsContent value="grupos" className="mt-4">
           <Card>
