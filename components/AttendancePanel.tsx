@@ -163,7 +163,10 @@ export default function AttendancePanel({
         <CardContent className="grid gap-3 md:grid-cols-4">
           <div>
             <label className="text-sm opacity-80">Grup</label>
-            <Select value={selectedGroup} onValueChange={setSelectedGroup}>
+            <Select value={selectedGroup} onValueChange={(groupId) => {
+              setSelectedGroup(groupId);
+              onGroupChange?.(groupId);
+            }}>
               <SelectTrigger className="w-full mt-1">
                 <SelectValue placeholder="Selecciona un grup" />
               </SelectTrigger>
