@@ -13,7 +13,14 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import {
   Dialog,
@@ -25,7 +32,13 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
 import {
   AlertDialog,
@@ -39,7 +52,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { useScheduleSubjects } from "@/lib/schedule-subjects"
-import type { ScheduleSubjectType } from "@/lib/schedule-subjects"
+import type { ScheduleSubjectType, SubjectRA } from "@/lib/schedule-subjects"
 
 type SubjectFormState = {
   name: string
@@ -56,31 +69,65 @@ const EMPTY_FORM: SubjectFormState = {
 export default function MateriesPage() {
   const { t } = useI18n()
   const { toast } = useToast()
-  const { subjects, addSubject, editSubject, removeSubject, resetSubjects } = useScheduleSubjects()
+  const {
+    subjects,
+    addSubject,
+    editSubject,
+    removeSubject,
+    resetSubjects,
+    addRA,
+    editRA,
+    removeRA,
+  } = useScheduleSubjects()
 
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [formState, setFormState] = useState<SubjectFormState>(EMPTY_FORM)
   const [isResetDialogOpen, setIsResetDialogOpen] = useState(false)
 
-  const lectiveCount = useMemo(() => subjects.filter((subject) => subject.type === "lective").length, [subjects])
+  // RA local UI state
+  const [raEditingId, setRaEditingId] = useState<string | null>(null)
+  const [raForm, setRaForm] = useState<{ name: string; percentage: string; hours: string }>({
+    name: "",
+    percentage: "",
+    hours: "",
+  })
+
+  const lectiveCount = useMemo(
+    () => subjects.filter((subject) => subject.type === "lective").length,
+    [subjects],
+  )
   const nonLectiveCount = subjects.length - lectiveCount
+
+  const currentSubject = useMemo(
+    () => (editingId ? subjects.find((s) => s.id === editingId) : null),
+    [editingId, subjects],
+  )
 
   const openCreateDialog = () => {
     setEditingId(null)
     setFormState(EMPTY_FORM)
     setIsDialogOpen(true)
+    // RA: only meaningful in edit mode, but reset anyway
+    setRaEditingId(null)
+    setRaForm({ name: "", percentage: "", hours: "" })
   }
 
   const openEditDialog = (id: string) => {
     const subject = subjects.find((item) => item.id === id)
     if (!subject) return
+
     setEditingId(id)
     setFormState({
       name: subject.name,
       type: subject.type,
       defaultLocation: subject.defaultLocation ?? "",
     })
+
+    // reset RA editor state when opening
+    setRaEditingId(null)
+    setRaForm({ name: "", percentage: "", hours: "" })
+
     setIsDialogOpen(true)
   }
 
@@ -99,7 +146,9 @@ export default function MateriesPage() {
     }
 
     const duplicate = subjects.some(
-      (subject) => subject.name.toLowerCase() === trimmedName.toLowerCase() && subject.id !== editingId,
+      (subject) =>
+        subject.name.toLowerCase() === trimmedName.toLowerCase() &&
+        subject.id !== editingId,
     )
 
     if (duplicate) {
@@ -112,11 +161,14 @@ export default function MateriesPage() {
     }
 
     if (editingId) {
+      // keep existing RAs
+      const existing = subjects.find((s) => s.id === editingId)
       editSubject(editingId, {
         name: trimmedName,
         type: formState.type,
         defaultLocation: trimmedLocation,
-      })
+        ras: existing?.ras ?? [],
+      } as any) // if TS complains, ensure your ScheduleSubject includes ras
       toast({
         title: t("subjects.editSuccessTitle"),
         description: t("subjects.editSuccessDescription"),
@@ -126,7 +178,8 @@ export default function MateriesPage() {
         name: trimmedName,
         type: formState.type,
         defaultLocation: trimmedLocation,
-      })
+        ras: [],
+      } as any)
       toast({
         title: t("subjects.createSuccessTitle"),
         description: t("subjects.createSuccessDescription"),
@@ -151,6 +204,93 @@ export default function MateriesPage() {
       description: t("subjects.resetSuccessDescription"),
     })
     setIsResetDialogOpen(false)
+  }
+
+  const resetRaForm = () => {
+    setRaEditingId(null)
+    setRaForm({ name: "", percentage: "", hours: "" })
+  }
+
+  const handleRaSubmit = () => {
+    if (!editingId) {
+      toast({
+        title: t("subjects.validationTitle"),
+        description: "Guarda la matèria abans d’afegir RA.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    const name = raForm.name.trim()
+    const percentage = Number(raForm.percentage)
+    const hours = Number(raForm.hours)
+
+    if (!name) {
+      toast({
+        title: t("subjects.validationTitle"),
+        description: "El nom del RA és obligatori.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    if (!Number.isFinite(percentage) || percentage < 0) {
+      toast({
+        title: t("subjects.validationTitle"),
+        description: "Percentatge no vàlid.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    if (!Number.isFinite(hours) || hours < 0) {
+      toast({
+        title: t("subjects.validationTitle"),
+        description: "Hores no vàlides.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    // avoid duplicate RA names inside the same subject
+    const duplicate = (currentSubject?.ras ?? []).some(
+      (r) =>
+        r.name.toLowerCase() === name.toLowerCase() && r.id !== raEditingId,
+    )
+
+    if (duplicate) {
+      toast({
+        title: t("subjects.validationTitle"),
+        description: "Ja existeix un RA amb aquest nom en esta matèria.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    if (raEditingId) {
+      editRA(editingId, raEditingId, { name, percentage, hours })
+      toast({ title: "RA actualitzat", description: "S’han guardat els canvis del RA." })
+    } else {
+      addRA(editingId, { name, percentage, hours })
+      toast({ title: "RA creat", description: "S’ha afegit un nou RA a la matèria." })
+    }
+
+    resetRaForm()
+  }
+
+  const openEditRA = (ra: SubjectRA) => {
+    setRaEditingId(ra.id)
+    setRaForm({
+      name: ra.name,
+      percentage: String(ra.percentage),
+      hours: String(ra.hours),
+    })
+  }
+
+  const handleDeleteRA = (raId: string) => {
+    if (!editingId) return
+    removeRA(editingId, raId)
+    toast({ title: "RA eliminat", description: "S’ha eliminat el RA." })
   }
 
   return (
@@ -287,7 +427,7 @@ export default function MateriesPage() {
       </PageLayout>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-3xl">
           <DialogHeader>
             <DialogTitle>
               {editingId ? t("subjects.editDialogTitle") : t("subjects.createDialogTitle")}
@@ -296,6 +436,7 @@ export default function MateriesPage() {
               {editingId ? t("subjects.editDialogDescription") : t("subjects.createDialogDescription")}
             </DialogDescription>
           </DialogHeader>
+
           <form className="space-y-4" onSubmit={handleSubmit}>
             <div className="space-y-2">
               <Label htmlFor="subject-name">{t("subjects.formName")}</Label>
@@ -306,13 +447,12 @@ export default function MateriesPage() {
                 required
               />
             </div>
+
             <div className="space-y-2">
               <Label htmlFor="subject-type">{t("subjects.formType")}</Label>
               <Select
                 value={formState.type}
-                onValueChange={(value: ScheduleSubjectType) =>
-                  setFormState((prev) => ({ ...prev, type: value }))
-                }
+                onValueChange={(value: ScheduleSubjectType) => setFormState((prev) => ({ ...prev, type: value }))}
               >
                 <SelectTrigger id="subject-type">
                   <SelectValue />
@@ -323,17 +463,140 @@ export default function MateriesPage() {
                 </SelectContent>
               </Select>
             </div>
+
             <div className="space-y-2">
               <Label htmlFor="subject-location">{t("subjects.formLocation")}</Label>
               <Input
                 id="subject-location"
                 value={formState.defaultLocation}
-                onChange={(event) =>
-                  setFormState((prev) => ({ ...prev, defaultLocation: event.target.value }))
-                }
+                onChange={(event) => setFormState((prev) => ({ ...prev, defaultLocation: event.target.value }))}
                 placeholder={t("subjects.formLocationPlaceholder")}
               />
             </div>
+
+            {/* ✅ RA Section (only useful when editing an existing subject) */}
+            <div className="space-y-3 rounded-lg border p-3">
+              <div className="flex items-center justify-between gap-2">
+                <div>
+                  <div className="text-sm font-medium">RA de la matèria</div>
+                  <div className="text-xs text-muted-foreground">
+                    Afegix resultats d’aprenentatge amb percentatge i hores.
+                  </div>
+                  {!editingId && (
+                    <div className="mt-1 text-xs text-muted-foreground">
+                      (Guarda la matèria per a poder afegir RA.)
+                    </div>
+                  )}
+                </div>
+                <Button type="button" variant="secondary" size="sm" onClick={resetRaForm}>
+                  Nou RA
+                </Button>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-3">
+                <div className="space-y-2 sm:col-span-1">
+                  <Label htmlFor="ra-name">Nom RA</Label>
+                  <Input
+                    id="ra-name"
+                    value={raForm.name}
+                    onChange={(e) => setRaForm((p) => ({ ...p, name: e.target.value }))}
+                    placeholder="Ex: RA1 - Interpretar plànols"
+                    disabled={!editingId}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="ra-percentage">Percentatge (%)</Label>
+                  <Input
+                    id="ra-percentage"
+                    inputMode="decimal"
+                    value={raForm.percentage}
+                    onChange={(e) => setRaForm((p) => ({ ...p, percentage: e.target.value }))}
+                    placeholder="Ex: 25"
+                    disabled={!editingId}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="ra-hours">Hores</Label>
+                  <Input
+                    id="ra-hours"
+                    inputMode="decimal"
+                    value={raForm.hours}
+                    onChange={(e) => setRaForm((p) => ({ ...p, hours: e.target.value }))}
+                    placeholder="Ex: 18"
+                    disabled={!editingId}
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2">
+                {raEditingId ? <Badge variant="secondary">Editant RA</Badge> : <Badge variant="outline">Nou RA</Badge>}
+                <Button type="button" onClick={handleRaSubmit} disabled={!editingId}>
+                  {raEditingId ? "Guardar RA" : "Afegir RA"}
+                </Button>
+              </div>
+
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nom</TableHead>
+                      <TableHead className="w-[140px]">%</TableHead>
+                      <TableHead className="w-[140px]">Hores</TableHead>
+                      <TableHead className="text-right">{t("common.actions")}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {(currentSubject?.ras ?? []).length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={4} className="py-6 text-center text-sm text-muted-foreground">
+                          Encara no hi ha RA en esta matèria.
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      (currentSubject?.ras ?? []).map((ra) => (
+                        <TableRow key={ra.id}>
+                          <TableCell className="font-medium">{ra.name}</TableCell>
+                          <TableCell>{ra.percentage}</TableCell>
+                          <TableCell>{ra.hours}</TableCell>
+                          <TableCell className="space-x-2 text-right">
+                            <Button type="button" variant="outline" size="sm" onClick={() => openEditRA(ra)}>
+                              <Pencil className="mr-2 h-3.5 w-3.5" />
+                              {t("common.edit")}
+                            </Button>
+
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button type="button" variant="ghost" size="sm">
+                                  <Trash2 className="mr-2 h-3.5 w-3.5" />
+                                  {t("common.delete")}
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Eliminar RA</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Segur que vols eliminar el RA “{ra.name}”?
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => handleDeleteRA(ra.id)}>
+                                    {t("common.delete")}
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
                 {t("common.cancel")}
