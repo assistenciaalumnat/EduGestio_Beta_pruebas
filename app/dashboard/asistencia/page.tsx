@@ -1,14 +1,18 @@
 "use client"
 
+import { useState } from "react"
 import { PageLayout } from "@/components/page-layout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Calendar, Clock, Users } from "lucide-react"
 import { useI18n } from "@/lib/i18n-context"
+import AttendancePanel from "@/components/AttendancePanel"
+import studentsData from "./students.json"
 
 export default function AsistenciaPage() {
   const { t } = useI18n()
+  const [selectedGroup, setSelectedGroup] = useState("1a")
 
   return (
     <PageLayout title={t("attendance.title")} description={t("attendance.description")}>
@@ -61,6 +65,7 @@ export default function AsistenciaPage() {
           <TabsTrigger value="grupos">{t("attendance.splitGroups")}</TabsTrigger>
           <TabsTrigger value="historial">{t("attendance.history")}</TabsTrigger>
         </TabsList>
+
         <TabsContent value="lista" className="space-y-4 mt-4">
           <div className="flex justify-between items-center">
             <div className="flex space-x-2">
@@ -70,16 +75,36 @@ export default function AsistenciaPage() {
             </div>
             <Button>{t("attendance.registerAttendance")}</Button>
           </div>
-          <Card>
-            <CardHeader>
-              <CardTitle>{t("attendance.studentsList")}</CardTitle>
-              <CardDescription>{t("attendance.selectGroupSubject")}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-center text-muted-foreground py-8">{t("attendance.selectGroupToViewList")}</p>
-            </CardContent>
-          </Card>
+
+          {(() => {
+            const groupData = studentsData.groups.find((g) => g.id === selectedGroup)
+            return (
+              <AttendancePanel
+                defaultGroupId={selectedGroup}
+                groups={studentsData.groups.map(({ id, name }) => ({ id, name }))}
+                subjects={[
+                  { id: "cat", name: "Llengua Catalana" },
+                  { id: "cas", name: "Llengua Castellana" },
+                  { id: "mat", name: "Matemàtiques" },
+                  { id: "his", name: "História" },
+                  { id: "mus", name: "Música" },
+                  { id: "bio", name: "Biologia" },
+                ]}
+                students={
+                  groupData?.students.map((s) => ({
+                    id: s.id,
+                    name: `${s.name} ${s.surname}`,
+                  })) ?? []
+                }
+                onGroupChange={(groupId) => setSelectedGroup(groupId)}
+                onSave={async (payload) => {
+                  console.log("Assistència registrada:", payload)
+                }}
+              />
+            )
+          })()}
         </TabsContent>
+
         <TabsContent value="grupos" className="mt-4">
           <Card>
             <CardHeader>
@@ -91,6 +116,7 @@ export default function AsistenciaPage() {
             </CardContent>
           </Card>
         </TabsContent>
+
         <TabsContent value="historial" className="mt-4">
           <Card>
             <CardHeader>
