@@ -28,6 +28,7 @@ import {
   LogOut,
   DoorOpen,
   Settings,
+  GraduationCap,
 } from "lucide-react"
 
 interface SidebarProps {
@@ -56,13 +57,23 @@ export function Sidebar({ className }: SidebarProps) {
       label: t("sidebar.schedules"),
       icon: CalendarRange,
       href: "/dashboard/horaris",
-      active: pathname.startsWith("/dashboard/horaris"),
+      // ✅ incloem també qualificacions perquè el submenú quede obert
+      active:
+        pathname.startsWith("/dashboard/horaris") ||
+        pathname.startsWith("/dashboard/qualificacions"),
       submenu: [
         {
           label: t("sidebar.scheduleSubjects"),
           icon: BookOpen,
           href: "/dashboard/horaris/materies",
           active: pathname === "/dashboard/horaris/materies",
+        },
+        {
+          // ✅ NOU: Qualificacions
+          label: "Qualificacions",
+          icon: GraduationCap,
+          href: "/dashboard/qualificacions",
+          active: pathname === "/dashboard/qualificacions",
         },
       ],
     },
@@ -177,6 +188,7 @@ export function Sidebar({ className }: SidebarProps) {
             <span>{t("app.name.gestio")}</span>
           </h1>
         </Link>
+
         <ScrollArea className="h-[calc(100vh-8rem)] pr-2">
           <div className="space-y-1">
             {routes.map((route) => (
@@ -195,6 +207,7 @@ export function Sidebar({ className }: SidebarProps) {
                     {route.label}
                   </div>
                 </Link>
+
                 {route.submenu && route.active && (
                   <div className="ml-6 mt-1 space-y-1">
                     {route.submenu.map((subitem) => (
@@ -224,6 +237,7 @@ export function Sidebar({ className }: SidebarProps) {
           </div>
         </ScrollArea>
       </div>
+
       <div className="mt-auto px-3 py-4 border-t border-gray-200 dark:border-gray-800">
         <button
           onClick={() => logout()}
