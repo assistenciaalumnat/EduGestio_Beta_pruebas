@@ -14,7 +14,7 @@ export type ScheduleSubject = {
   name: string
   type: ScheduleSubjectType
   defaultLocation?: string
-  ras: SubjectRA[] // ✅ NEW
+  ras: SubjectRA[]
 }
 
 const DEFAULT_SUBJECTS_DATA: ScheduleSubject[] = [
@@ -55,9 +55,7 @@ export function loadScheduleSubjects(): ScheduleSubject[] {
 
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY)
-    if (!raw) {
-      return DEFAULT_SUBJECTS
-    }
+    if (!raw) return DEFAULT_SUBJECTS
 
     const parsed = JSON.parse(raw) as any
 
@@ -70,7 +68,6 @@ export function loadScheduleSubjects(): ScheduleSubject[] {
       name: subject.name || "Assignatura",
       type: subject.type === "non_lective" ? "non_lective" : "lective",
       defaultLocation: subject.defaultLocation || "",
-      // ✅ asegura compatibilidad con datos viejos
       ras: Array.isArray(subject.ras)
         ? subject.ras
           .filter(Boolean)
@@ -107,9 +104,7 @@ export function subscribeToScheduleSubjects(callback: (subjects: ScheduleSubject
 
   const handleCustomEvent = (event: Event) => {
     const detail = (event as CustomEvent<CustomEventDetail>).detail
-    if (detail?.subjects) {
-      callback(detail.subjects)
-    }
+    if (detail?.subjects) callback(detail.subjects)
   }
 
   const handleStorage = (event: StorageEvent) => {
@@ -159,10 +154,7 @@ export function useScheduleSubjects() {
         const subjectExists = prev.some(
           (item) => item.name.trim().toLowerCase() === subject.name.trim().toLowerCase(),
         )
-
-        if (subjectExists) {
-          return prev
-        }
+        if (subjectExists) return prev
 
         const nextSubject: ScheduleSubject = {
           ...subject,
@@ -205,15 +197,20 @@ export function useScheduleSubjects() {
     updateSubjects(DEFAULT_SUBJECTS)
   }, [updateSubjects])
 
-  // ✅ NEW: CRUD de RA
+  // ✅ FIX: addRA idempotente (evita doble inserción en dev Strict Mode)
   const addRA = useCallback(
     (subjectId: string, ra: Omit<SubjectRA, "id">) => {
+      const raWithId: SubjectRA = { id: createId("ra"), ...ra }
+
       updateSubjects((prev) =>
-        prev.map((s) =>
-          s.id === subjectId
-            ? { ...s, ras: [...(s.ras ?? []), { id: createId("ra"), ...ra }] }
-            : s,
-        ),
+        prev.map((s) => {
+          if (s.id !== subjectId) return s
+
+          const exists = (s.ras ?? []).some((r) => r.id === raWithId.id)
+          if (exists) return s
+
+          return { ...s, ras: [...(s.ras ?? []), raWithId] }
+        }),
       )
     },
     [updateSubjects],
@@ -254,7 +251,6 @@ export function useScheduleSubjects() {
     editSubject,
     removeSubject,
     resetSubjects,
-    // ✅ expose RA actions
     addRA,
     editRA,
     removeRA,
