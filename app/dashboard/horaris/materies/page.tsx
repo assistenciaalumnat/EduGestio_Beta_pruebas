@@ -195,15 +195,20 @@ export default function MateriesPage() {
     if (!editingId) return
 
     const name = raForm.name.trim()
-    const percentage = Number(raForm.percentage)
-    const hours = Number(raForm.hours)
+    const percentage = raForm.percentage.trim()
+    const hours = raForm.hours.trim()
 
-    if (!name || percentage < 0 || hours < 0) return
+    if (!name || !percentage || !hours) return
+
+    const percentageNum = Number(percentage)
+    const hoursNum = Number(hours)
+
+    if (!Number.isFinite(percentageNum) || percentageNum < 0 || !Number.isFinite(hoursNum) || hoursNum < 0) return
 
     if (raEditingId) {
-      editRA(editingId, raEditingId, { name, percentage, hours })
+      editRA(editingId, raEditingId, { name, percentage: percentageNum, hours: hoursNum })
     } else {
-      addRA(editingId, { name, percentage, hours })
+      addRA(editingId, { name, percentage: percentageNum, hours: hoursNum })
     }
 
     resetRaForm()
