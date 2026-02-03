@@ -2,25 +2,33 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 
 export type ScheduleSubjectType = "lective" | "non_lective"
 
+export type SubjectRA = {
+  id: string
+  name: string
+  percentage: number
+  hours: number
+}
+
 export type ScheduleSubject = {
   id: string
   name: string
   type: ScheduleSubjectType
   defaultLocation?: string
+  ras: SubjectRA[] // ✅ NEW
 }
 
 const DEFAULT_SUBJECTS_DATA: ScheduleSubject[] = [
-  { id: "subject-mathematics", name: "Matemàtiques", type: "lective", defaultLocation: "Aula 101" },
-  { id: "subject-catalan", name: "Llengua Catalana", type: "lective", defaultLocation: "Aula 102" },
-  { id: "subject-spanish", name: "Llengua Castellana", type: "lective", defaultLocation: "Aula 103" },
-  { id: "subject-english", name: "Anglès", type: "lective", defaultLocation: "Aula 201" },
-  { id: "subject-science", name: "Ciències Naturals", type: "lective", defaultLocation: "Laboratori 1" },
-  { id: "subject-social-science", name: "Ciències Socials", type: "lective", defaultLocation: "Aula 202" },
-  { id: "subject-pe", name: "Educació Física", type: "lective", defaultLocation: "Pista esportiva" },
-  { id: "subject-music", name: "Música", type: "lective", defaultLocation: "Aula de Música" },
-  { id: "subject-technology", name: "Tecnologia", type: "lective", defaultLocation: "Taller de Tecnologia" },
-  { id: "subject-cycle-meeting", name: "Reunió de Cicle", type: "non_lective", defaultLocation: "Sala de professors" },
-  { id: "subject-pedagogic-coordination", name: "Coordinació Pedagògica", type: "non_lective", defaultLocation: "Sala de reunions" },
+  { id: "subject-mathematics", name: "Matemàtiques", type: "lective", defaultLocation: "Aula 101", ras: [] },
+  { id: "subject-catalan", name: "Llengua Catalana", type: "lective", defaultLocation: "Aula 102", ras: [] },
+  { id: "subject-spanish", name: "Llengua Castellana", type: "lective", defaultLocation: "Aula 103", ras: [] },
+  { id: "subject-english", name: "Anglès", type: "lective", defaultLocation: "Aula 201", ras: [] },
+  { id: "subject-science", name: "Ciències Naturals", type: "lective", defaultLocation: "Laboratori 1", ras: [] },
+  { id: "subject-social-science", name: "Ciències Socials", type: "lective", defaultLocation: "Aula 202", ras: [] },
+  { id: "subject-pe", name: "Educació Física", type: "lective", defaultLocation: "Pista esportiva", ras: [] },
+  { id: "subject-music", name: "Música", type: "lective", defaultLocation: "Aula de Música", ras: [] },
+  { id: "subject-technology", name: "Tecnologia", type: "lective", defaultLocation: "Taller de Tecnologia", ras: [] },
+  { id: "subject-cycle-meeting", name: "Reunió de Cicle", type: "non_lective", defaultLocation: "Sala de professors", ras: [] },
+  { id: "subject-pedagogic-coordination", name: "Coordinació Pedagògica", type: "non_lective", defaultLocation: "Sala de reunions", ras: [] },
 ]
 
 const STORAGE_KEY = "edu-gestio-schedule-subjects"
@@ -51,7 +59,7 @@ export function loadScheduleSubjects(): ScheduleSubject[] {
       return DEFAULT_SUBJECTS
     }
 
-    const parsed = JSON.parse(raw) as ScheduleSubject[]
+    const parsed = JSON.parse(raw) as any
 
     if (!Array.isArray(parsed) || parsed.length === 0) {
       return DEFAULT_SUBJECTS
@@ -62,6 +70,17 @@ export function loadScheduleSubjects(): ScheduleSubject[] {
       name: subject.name || "Assignatura",
       type: subject.type === "non_lective" ? "non_lective" : "lective",
       defaultLocation: subject.defaultLocation || "",
+      // ✅ asegura compatibilidad con datos viejos
+      ras: Array.isArray(subject.ras)
+        ? subject.ras
+          .filter(Boolean)
+          .map((ra: any) => ({
+            id: ra.id || createId("ra"),
+            name: String(ra.name ?? "").trim() || "RA",
+            percentage: Number.isFinite(Number(ra.percentage)) ? Number(ra.percentage) : 0,
+            hours: Number.isFinite(Number(ra.hours)) ? Number(ra.hours) : 0,
+          }))
+        : [],
     }))
   } catch (error) {
     console.error("Failed to parse schedule subjects", error)
@@ -84,7 +103,7 @@ export function saveScheduleSubjects(value: UpdateArg): ScheduleSubject[] {
 }
 
 export function subscribeToScheduleSubjects(callback: (subjects: ScheduleSubject[]) => void) {
-  if (!isBrowser) return () => {}
+  if (!isBrowser) return () => { }
 
   const handleCustomEvent = (event: Event) => {
     const detail = (event as CustomEvent<CustomEventDetail>).detail
@@ -145,7 +164,11 @@ export function useScheduleSubjects() {
           return prev
         }
 
-        const nextSubject: ScheduleSubject = { ...subject, id: createId("subject") }
+        const nextSubject: ScheduleSubject = {
+          ...subject,
+          id: createId("subject"),
+          ras: subject.ras ?? [],
+        }
         return [...prev, nextSubject]
       })
     },
@@ -157,7 +180,13 @@ export function useScheduleSubjects() {
       updateSubjects((prev) =>
         prev.map((subject) =>
           subject.id === id
-            ? { ...subject, name: value.name, type: value.type, defaultLocation: value.defaultLocation }
+            ? {
+              ...subject,
+              name: value.name,
+              type: value.type,
+              defaultLocation: value.defaultLocation,
+              ras: value.ras ?? subject.ras ?? [],
+            }
             : subject,
         ),
       )
@@ -176,6 +205,44 @@ export function useScheduleSubjects() {
     updateSubjects(DEFAULT_SUBJECTS)
   }, [updateSubjects])
 
+  // ✅ NEW: CRUD de RA
+  const addRA = useCallback(
+    (subjectId: string, ra: Omit<SubjectRA, "id">) => {
+      updateSubjects((prev) =>
+        prev.map((s) =>
+          s.id === subjectId
+            ? { ...s, ras: [...(s.ras ?? []), { id: createId("ra"), ...ra }] }
+            : s,
+        ),
+      )
+    },
+    [updateSubjects],
+  )
+
+  const editRA = useCallback(
+    (subjectId: string, raId: string, patch: Partial<Omit<SubjectRA, "id">>) => {
+      updateSubjects((prev) =>
+        prev.map((s) =>
+          s.id === subjectId
+            ? { ...s, ras: (s.ras ?? []).map((r) => (r.id === raId ? { ...r, ...patch } : r)) }
+            : s,
+        ),
+      )
+    },
+    [updateSubjects],
+  )
+
+  const removeRA = useCallback(
+    (subjectId: string, raId: string) => {
+      updateSubjects((prev) =>
+        prev.map((s) =>
+          s.id === subjectId ? { ...s, ras: (s.ras ?? []).filter((r) => r.id !== raId) } : s,
+        ),
+      )
+    },
+    [updateSubjects],
+  )
+
   const indexedSubjects = useMemo(() => {
     return new Map(subjects.map((subject) => [subject.id, subject]))
   }, [subjects])
@@ -187,5 +254,9 @@ export function useScheduleSubjects() {
     editSubject,
     removeSubject,
     resetSubjects,
+    // ✅ expose RA actions
+    addRA,
+    editRA,
+    removeRA,
   }
 }
