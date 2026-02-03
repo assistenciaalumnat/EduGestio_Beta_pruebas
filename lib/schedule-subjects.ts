@@ -197,19 +197,13 @@ export function useScheduleSubjects() {
     updateSubjects(DEFAULT_SUBJECTS)
   }, [updateSubjects])
 
-  // ✅ FIX: addRA idempotente (evita doble inserción en dev Strict Mode)
   const addRA = useCallback(
     (subjectId: string, ra: Omit<SubjectRA, "id">) => {
-      const raWithId: SubjectRA = { id: createId("ra"), ...ra }
-
       updateSubjects((prev) =>
         prev.map((s) => {
           if (s.id !== subjectId) return s
 
-          const exists = (s.ras ?? []).some((r) => r.id === raWithId.id)
-          if (exists) return s
-
-          return { ...s, ras: [...(s.ras ?? []), raWithId] }
+          return { ...s, ras: [...(s.ras ?? []), { id: createId("ra"), ...ra }] }
         }),
       )
     },
